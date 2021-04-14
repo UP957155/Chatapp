@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div style="width: 70%;">
+<div id="messages" style="height: 75vh; overflow-y: scroll; border-bottom: solid 5px black;  scrollbar-width: 2px;"></div><br>
+<div class="msgBox" style=" display: flex; flex-direction: row; padding-top: 5px;">
+<img src="/image/chat/file.svg" id="fileImg" width="24" height="24"><input id="fileInput" type="file" accept="application/pdf, image/*, text/*" onchange="readFile(this)" style="display: none;" />
+<input type="text" id="messageBox" placeholder="Type your message here" style="border: none;display: block; width: 80%; margin-bottom: 10px; padding: 10px;" />
+<img src="/image/chat/send.png" id="send" width="32" height="32" style="cursor: pointer; border-radius: 50%; margin-left: 5px; " />
+</div>
+<a href="" target="_blank" id="helper" style="display: none;"></a>
+</div>
+<div>
+    <h1 id="roomName">Real Time Messaging</h1>
+    <h4>Users:</h4>
+    <ul id="roomUsers">
+
+    </ul>
+    <img id="addImg" onclick=openLeftUsers() style="display: none;" src="/image/profile/plus.svg" alt="" width="30" height="30">
+    <ul id="leftUsers">
+
+    </ul>
+    <button id="addBtn" onclick=addUsers() style="display: none;">ADD Users</button>
+</div>
+<script src="./index.js"></script>
+</body>
+</html>

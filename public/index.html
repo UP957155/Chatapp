@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="navBody">
+    <a onclick=signInOrSignUp(true)>Sign In</a><a onclick=signInOrSignUp(false)>Sign Up</a>
+    <div class="userBlock">
+    </div><br>
+    <button class="signout" style="display: none;">SIGN OUT</button><br>
+    <h2 id="profileName">Unknown</h2>
+    <img id="profileImg" src="/image/profile/UNKNOWN.jpg" width="100" height="100" style="border-radius: 50%;" alt="">
+    <p id="Notif" onclick=openNotifications() style="display: none;">Notifications</p>
+    <div class="notifsBox">
+        <ul class="notifsAll">
+        </ul><br>
+    </div><br>
+    <p id="F" onclick=openFriends() style="display: none;" >Friends</p>
+    <div class="friendsBox">
+        <ul class="friendsAll">
+        </ul><br>
+    </div><br>
+    <div class="usersBox" style="display: none">
+        <h4>Find Users</h4>
+        <input type="text" name="" id="searchBox" oninput=findUser(this.value)>
+        <ul class="ul">
+        </ul>
+        <button class="confirmFriends">Send request</button>
+    </div>
+    </div>
+    <div name="room" id="room" >
+        <h2>Your Rooms</h2>
+        <ul id="ulRoom">
+        
+        </ul><br>
+        <img id="onlyUser" onclick=openRoomPage() style="display: none;" src="/image/profile/plus.svg" alt="" width="30" height="30">
+    </div>
+    <div class="check" style="display: none;">
+        <h3>Create room:</h3><br>
+        <input type="text" name="newRoom" id="newRoom" placeholder="name of new room...">
+        <p>select friends:</p><br>
+        <ul class="friendsO">
+        </ul><br>
+        <button class="confirmRoom" onclick="saveRoom()">Create</button><span onclick="closeRoomPage()" style="color: red;" required>Cancel</span>
+    </div>
+    <script>
+        const name = document.querySelector('#name');
+        const photo = document.querySelector('#chooseRoom');
+        const room = document.querySelector('#room');
+        const signIN = document.querySelector('.signin');
+        const signOUT = document.querySelector('.signout');
+        const div = document.querySelector('.userBlock');
+        const sendBtn = document.querySelector('.confirmFriends')
+        const acceptBtn = document.querySelector('.accept')
+        let user = {
+            id: null,
+            nickname: undefined,
+            photo: undefined
+        }
+        let imageCode = ''
+        let ws
+       
+        const makeid = (length) => {
+            let result           = []
+            const characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!£$%^&*()_+,.;:#'
+            let charactersLength = characters.length
+            for ( var i = 0; i < length; i++ ) {
+                result.push(characters.charAt(Math.floor(Math.random() * 
+                charactersLength)))
+            }
+         return result.join('')
+        }
+
+        const signUp = async() => {
+            const nickname = document.querySelector('#nickname')
+            const email = document.querySelector('#email')
+            const password = document.querySelector('#password')
+            const name = document.querySelector('#name')
+            const surname = document.querySelector('#surname')
+            const input = document.querySelector('#file')
+
+            const formData = new FormData()
+            formData.append('user',JSON.stringify({
+                nickname: nickname.value,
+                email: email.value,
+                password: password.value,
+                name: name.value,
+                surname: surname.value
+            }))
+            formData.append('m_file',input.files[0])
+
+            const response = await fetch('./register', {
+                method: 'POST',
+                body: formData
+            })
+            const data = await response.json()
+            console.log(data)
+            signInOrSignUp(true)
+        }
+
+        const signInOrSignUp = (bool) => {
+            const div = document.querySelector('.userBlock')
+            if (bool){
+                div.innerHTML = `
+    <label for="email">Email</label>
+    <input type="email" name="email" placeholder="user1234@gmail.com" id="email" required><br>
+    <label for="email">Password</label>
+    <input type="password" name="password"  placeholder="user1234" id="password" required><br>
+    <button class="signin" onclick=userSignIn()>SIGN IN</button><br>
+                `
+            }else{
+                div.innerHTML = `
+    <label for="email">Nickname</label>
+    <input type="text" name="nickname" placeholder="User12" id="nickname" required><br>
+    <label for="email">Email</label>
+    <input type="email" name="email" placeholder="user@gmail.com" id="email" required><br>
+    <label for="email">Password</label>
+    <input type="password" name="password" id="password" required><br>
+    <label for="email">Name</label>
+    <input type="name" name="name" placeholder="John" id="name"><br>
+    <label for="email">Surname</label>
+    <input type="surname" name="surname" placeholder="Smith" id="surname"><br>
+    <label for="email">🧷</label>
+    <input type="file" name="m_file" accept="image/*" onchange=readFile(this) id="file"><br>
+    <img id="showImage" style="display: none" height=100  width=80/>
+    <button class="signup" onclick=signUp()>SIGN UP</button><br>`
+            }
+        }
+        signInOrSignUp(true)
+
+        const readFile = (input) => {
+            const image = document.querySelector('#showImage')
+            let file = input.files[0]
+            const reader = new FileReader()
+            reader.onload = function(){
+                let dataURL = reader.result
+                image.src = dataURL
+                imageCode = dataURL
+            }
+         reader.readAsDataURL(file)
+         image.style.display = 'block'
+         
+        }
+
+        const openFriends = () => {
+            const ul = document.querySelector('.friendsAll')
+            if (ul.style.display === 'none'){
+                ul.style.display = 'block'
+            }else{
+                ul.style.display = 'none'
+            }
+        }
+
+        const openNotifications = () => {
+            const ul = document.querySelector('.notifsAll')
+            if (ul.style.display === 'none'){
+                ul.style.display = 'block'
+            }else{
+                ul.style.display = 'none'
+            }
+        }
+
+        const findUser = (str) => {
+            const users = document.querySelectorAll('#users')
+            for (const user of users){
+                if (user.name.includes(str) && str !== ''){
+                    user.parentNode.style.display = 'block'
+                }else{
+                    user.parentNode.style.display = 'none'
+                }
+            }
+        }
+
+        const getFriends = async() => {
+            const response =  await fetch('./getFriends', {
+                method: 'POST',
+                headers: {
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: user.id
+                })
+            })
+            const friends = await response.json()
+            console.log(friends.length)
+            const title = document.querySelector('#F')
+            title.textContent = 'Friends (' + friends.length + ')'
+            const div = document.querySelector('.friendsBox')
+            const ul = document.querySelector('.friendsAll')
+            ul.style.display = 'none'
+            ul.innerHTML = ''
+            for (const friend of friends){
+                const li = document.createElement('li')
+                const button = document.createElement('button')
+                button.textContent = 'Delete'
+                button.onclick = () => {
+                   deleteFriend(friend.id, user.id)
+                   //console.log(friend.id, user.id)
+                }
+                li.innerHTML = `<div>
+                    <img src=/image/profile/${friend.photo} width=40 height=40 /><br>${friend.nickname}
+                </div>`
+                li.append(button)
+                ul.append(li)
+            }
+            div.append(ul)
+            const ul2 = document.querySelector('.friendsO')
+            ul2.innerHTML = ''
+            for (const friend of friends){
+                const li = document.createElement('li')
+                li.innerHTML = `<input type="checkbox" id="friendss" name=${friend.nickname} value="${friend.id}">
+                    <img src=/image/profile/${friend.photo} width=40 height=40 /><br>${friend.nickname}`
+                ul2.append(li)
+            }
+        }
+
+        const deleteFriend = async(friend, id) => {
+            const response =  await fetch('./deleteFriend', {
+                method: 'DELETE',
+                headers: {
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: id,
+                    friend: friend
+                })
+            })
+            const answer = await response.json()
+            getFriends()
+            getUsers()
+            if (!ws) {
+                console.log("No WebSocket connection :(");
+            }else{
+                ws.send(JSON.stringify({
+                friend: friend,
+                whoCancelFriends: user.nickname
+            }))
+            }
+        }
+
+        const getUsers = async() => {
+            const response =  await fetch('./friends', {
+                method: 'POST',
+                headers: {
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: user.id
+                })
+            })
+            const users = await response.json()
+            if (users.notFriends.length !== 0){
+                const div = document.querySelector('.usersBox')
+                const ul = document.querySelector('.ul')
+                ul.innerHTML = ''
+                for (const user of users.notFriends){
+                    const li = document.createElement('li')
+                    let lineInput = (users.toWho.includes(user.id)) ? `<input type="checkbox" id="users" name=${user.nickname} style="display: none" value="${user.id}">` :
+                    (users.whoSend.includes(user.id)) ? `<input type="checkbox" id="users" name=${user.nickname} style="display: none" value="${user.id}">` :
+                    `<input type="checkbox" id="users" name=${user.nickname} value="${user.id}">`
+                    li.innerHTML = `
+                    ${lineInput}<img src=/image/profile/${user.photo} width=40 height=40 /><br>${user.nickname}
+                    `
+                    li.style.display = 'none'
+                    ul.append(li)
+                }
+                div.style.display = 'block'
+            }else{
+                console.log(users)
+                const ul = document.querySelector('.ul')
+                ul.innerHTML = ''
+            }
+        }
+
+        const userSignOut = async() => {
+            const response = await fetch('./user', {
+                method: 'POST',
+                headers:{
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: user.id,
+                    email: '',
+                    password: ''
+                })
+            })
+            const answer = await response.json()
+            if (!answer.bool){
+                //window.location.pathname = '/'
+                window.sessionStorage.clear()
+                document.querySelector('.friendsO').innerHTML = ''
+                document.querySelector('.friendsAll').innerHTML = ''
+                document.querySelector('.ul').innerHTML = ''
+                document.querySelectorAll('#ulRoom').innerHTML = ''
+                const div1 = document.querySelector('.usersBox')
+                const aCreate = document.querySelector('#onlyUser')
+                const aNotif = document.querySelector('#Notif')
+                const aFriend = document.querySelector('#F')
+                aCreate.style.display = 'none'
+                document.querySelector('#profileName').textContent = 'Unknown'
+                document.querySelector('#profileImg').src = '/image/profile/unknown.jpg'
+                document.querySelector('.notifications').remove()
+                user.nickname = undefined
+                user.photo = undefined
+                signOUT.style.display = 'none'
+                div.style.display = 'block'
+                div1.style.display = 'none'
+                aNotif.style.display = 'none'
+                aFriend.style.display = 'none'
+                closeRoomPage()
+                getUserNow();
+                signInOrSignUp(true)
+            }
+        }
+
+         const userSignIn = async() => {
+            let symbol = makeid(30)
+            const email = document.querySelector('#email')
+            const password = document.querySelector('#password')
+            const response = await fetch('./user', {
+                method: 'POST',
+                headers:{
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify({
+                    email: email.value,
+                    password: password.value,
+                    symbol: symbol
+                })
+            })
+            const answer = await response.json()
+            if (answer.bool){
+                window.sessionStorage.setItem('userId', answer.user.id)
+                window.sessionStorage.setItem('symbol', answer.user.symbol)
+                getUserNow()
+                //window.location.pathname = answer.user.id
+                /*signOUT.style.display = 'block'
+                div.style.display = 'none'
+                user.id = answer.user.id
+                user.nickname = answer.user.nickname
+                user.photo = answer.user.photo
+                //name.value = ''
+                //photo.value = ''
+                const usersBox = document.querySelector('.usersBox')
+                const aCreate = document.querySelector('#onlyUser')
+                const aNotif = document.querySelector('#Notif')
+                const aFriend = document.querySelector('#F')
+                aCreate.style.display = 'block'
+                usersBox.style.display = 'block'
+                const showName = document.querySelector('#profileName')
+                const showPhoto = document.querySelector('#profileImg')
+                const body = document.querySelector('.navBody')
+                showPhoto.src = `./image/profile/${answer.user.photo}`
+                showName.textContent = user.nickname
+                aNotif.style.display = 'block'
+                aFriend.style.display = 'block'
+                getRooms(answer.user.id)
+                getFriends()
+                getUsers()
+                showFriendAlert(user.id)*/
+            }else{
+                console.log(answer.text)
+
+            }
+        }
+
+        const saveRoom = async() => {
+            const friends = document.querySelectorAll('#friendss')
+            const roomName = document.querySelector('#newRoom')
+            if (roomName.value !== ''){
+            let newRoom = roomName.value
+            let roomFriends = []
+            for (let i = 0; i < friends.length; i++){
+                if (friends[i].checked === true){
+                    roomFriends.push(JSON.parse(friends[i].value))
+                    console.log('vlozeno')
+                }
+            }
+            roomFriends.push(user.id)
+            const response = await fetch('./createRoom', {
+                method: 'POST',
+                headers: {
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify({
+                    room: newRoom,
+                    users: JSON.stringify(roomFriends),
+                    admin: user.id
+                })
+            })
+            const answer = await response.json()
+            if (answer === true){
+
+                getRooms(user.id)
+            }
+            if (!ws) {
+                console.log("No WebSocket connection :(");
+            }else{
+                ws.send(JSON.stringify({
+                room: newRoom,
+                users: roomFriends,
+                admin: user.nickname
+            }))
+            }
+            closeRoomPage()
+            console.log(answer)
+            roomName.style.border = 'solid 1px black'
+            roomName.value = ''
+            roomName.placeholder = ''
+        }else{
+            roomName.style.border = 'solid 3px red'
+            roomName.placeholder = 'this can not be empty'
+        }
+        }
+
+        const openRoomPage = () => {
+            const divRoom = document.querySelector('.check')
+            divRoom.style.display = 'block'
+        }
+        const closeRoomPage = () => {
+            const divRoom = document.querySelector('.check')
+            const roomName = document.querySelector('#newRoom')
+            roomName.style.border = 'solid 1px black'
+            roomName.value = ''
+            roomName.placeholder = ''
+            divRoom.style.display = 'none'
+        }
+
+        const getRooms = async (id) => {
+            const response = await fetch('./rooms',{
+                method: 'POST',
+                headers: {
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: id
+                })
+            })
+
+            const rooms = await response.json()
+            const div = document.querySelector('#room')
+            const ul = document.querySelector('#ulRoom')
+            ul.innerHTML = ''
+            for (let i = 0; i < rooms.length; i++){
+                const divRoom = document.createElement('div')
+                const button = document.createElement('span')
+                const leaveRoom = document.createElement('span')
+                divRoom.className = 'toRoom'
+                button.onclick = () => {
+                   goToRoom(rooms[i])
+                }
+                leaveRoom.onclick = () => {
+                    leavetheRoom(rooms[i], user.id)
+                }
+                button.textContent = 'ENTRY'
+                //button.style.color = 'green'
+                button.style.cursor = 'pointer'
+                leaveRoom.textContent = 'LEAVE'
+                leaveRoom.style.color = 'orange'
+                leaveRoom.style.cursor = 'pointer'
+                let html1 = (rooms[i].admin === null) ? `<p>Admin: Unknown</p>` : (rooms[i].admin.id === user.id) ? `<p>Admin: You</p><span id=${rooms[i].id} onclick=deleteRoom(this.id) style="color: red; cursor: pointer;">DELETE</span><p>Number of users: ${rooms[i].users.length}</p>` : `<p>Admin: ${rooms[i].admin.nickname}</p><p>Number of users: ${rooms[i].users.length}</p>`
+                divRoom.innerHTML = `
+                <h3>${rooms[i].room}</h3>
+                ${html1}
+                `
+                divRoom.append(button)
+                if(rooms[i].admin !== null && rooms[i].admin.id !== user.id){
+                    divRoom.append(leaveRoom)
+                }
+                divRoom.style.border = 'solid 0.1px grey'
+                divRoom.width = '50%'
+                ul.append(divRoom)
+            }
+            div.append(ul)
+            console.log(rooms, user.id)
+            console.log('getRooms called')
+        }
+       
+        const deleteRoom = async(id) => {
+            const response = await fetch('./deleteRoom', {
+                    method: 'DELETE',
+                    headers: {
+                        "Content-type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        id: id
+                    })
+                })
+            const room = await response.json()
+            getRooms(user.id)
+            if (!ws) {
+                console.log("No WebSocket connection :(");
+            }else{
+                ws.send(JSON.stringify({
+                room: room.room,
+                users: JSON.parse(room.users),
+                adminName: user.nickname
+            }))
+            }
+        }
+
+        const leavetheRoom = async(room, userID) => {
+            const response = await fetch('./leaveRoom', {
+                    method: 'PUT',
+                    headers: {
+                        "Content-type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        room: room,
+                        userID: userID
+                    })
+                })
+            const answer = await response.json()
+            console.log(answer)
+            getRooms(user.id)
+            if (!ws) {
+                console.log("No WebSocket connection :(");
+            }else{
+                ws.send(JSON.stringify({
+                room: answer,
+                whoLeaveRoom: user.nickname
+            }))
+            }
+        }
+        
+        const goToRoom = async(room) => {
+                const response = await fetch('./goToRoom', {
+                    method: 'POST',
+                    headers: {
+                        "Content-type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        id: user.id,
+                        room: room
+                    })
+                })
+            const isValid = await response.json()
+            if (isValid){
+                window.location.pathname = '/chat.html'
+                return;
+            }
+            console.log('Can not go to room');
+        }
+        
+        
+        signOUT.addEventListener('click', () => {
+            userSignOut()
+        })
+
+async function getUserNow() {
+    let id = window.sessionStorage.userId
+    let symbol = window.sessionStorage.symbol
+    const response1 = await fetch('./users', {
+      method: 'POST',
+      headers: {
+        "Content-type": "application/json"
+      },
+      body: JSON.stringify({
+        id: (id === undefined) ? null : id,
+        symbol: symbol
+      })
+    });
+    const data1 = await response1.json();
+    if (data1.nickname !== ''){
+    signOUT.style.display = 'block'
+    div.style.display = 'none'
+    user.id = data1.id
+    user.nickname = data1.nickname
+    user.photo = data1.photo
+    showFriendAlert(data1.id)
+    const aCreate = document.querySelector('#onlyUser')
+    const aNotif = document.querySelector('#Notif')
+    const aFriend = document.querySelector('#F')
+    aFriend.style.display = 'block'
+    aNotif.style.display = 'block'
+    aCreate.style.display = 'block'
+    const showName = document.querySelector('#profileName')
+    const body = document.querySelector('.navBody')
+    const showPhoto = document.querySelector('#profileImg')
+    const usersBox = document.querySelector('.usersBox')
+    usersBox.style.display = 'block'
+    showPhoto.src = `/image/profile/${user.photo}`
+    showName.textContent = user.nickname
+    getFriends()
+    getUsers()
+    getRooms(data1.id)
+    console.log(data1);
+    }else{
+    signOUT.style.display = 'none'
+    div.style.display = 'block'
+    document.querySelector('#profileImg').src = '/image/profile/unknown.jpg'
+    getRooms(null)
+    console.log(data1);
+    }
+    console.log('getUserNow called')
+  }
+
+  const acceptFriendShip = async() => {
+    const friend = document.querySelector('#user')
+    const response = await fetch('./createFriendShip', {
+        method: 'POST',
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: JSON.stringify({
+            event: 'accept',
+            id: user.id,
+            friend: JSON.parse(friend.textContent)
+        })
+    })
+    const answer = await response.json()
+    if (!ws) {
+        console.log("No WebSocket connection :(");
+      }else{
+        ws.send(JSON.stringify({
+        event: 'accept',
+        id: user.id,
+        friend: JSON.parse(friend.textContent),
+        name: user.nickname
+      }))
+      }
+    console.log(user.id, JSON.parse(friend.textContent), friend.parentNode.parentNode)
+    friend.parentNode.parentNode.remove()
+    showFriendAlert(user.id)
+    getFriends()
+    getUsers()
+  }
+
+
+  const notacceptFriendShip = async() => {
+    const friend = document.querySelector('#user')
+    const response = await fetch('./createFriendShip', {
+        method: 'POST',
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: JSON.stringify({
+            event: 'not',
+            id: user.id,
+            friend: JSON.parse(friend.textContent)
+        })
+    })
+    const answer = await response.json()
+    if (!ws) {
+        console.log("No WebSocket connection :(");
+      }else{
+        ws.send(JSON.stringify({
+        event: 'not',
+        id: user.id,
+        friend: JSON.parse(friend.textContent),
+        name: user.nickname
+      }))
+      }
+    console.log(user.id, JSON.parse(friend.textContent))
+    friend.parentNode.parentNode.remove()
+    showFriendAlert(user.id)
+    getFriends()
+    getUsers()
+  }
+
+  const showFriendAlert = async(id) => {
+    const response = await fetch('./notifs', {
+        method: 'POST',
+        headers: {
+        "Content-type": "application/json"
+      },
+      body: JSON.stringify({
+          id: id
+      })
+    })
+    const notifications = await response.json()
+    console.log(notifications)
+    if (notifications.length > 0){
+        const title = document.querySelector('#Notif')
+        title.textContent = 'Notifications ' + notifications.length
+    }else{
+        const title = document.querySelector('#Notif')
+        title.textContent = 'Notifications'
+    }
+    const body = document.querySelector('.notifsBox')
+    const ul = document.querySelector('.notifsAll')
+    //ul.className = 'notifications'
+    ul.innerHTML = ''
+    ul.style.display = 'none'
+    for (const notif of notifications){
+        const li = document.createElement('li')
+        const div = document.createElement('div')
+        div.innerHTML = `
+        <p>${notif.name} want to be your friend</p><a id="user" style=" display: none; ">${notif.text}</a>
+        <button class="accept" onclick=acceptFriendShip()>Accept</button><button class="notaccept" onclick=notacceptFriendShip()>Not Accept</button>
+        `
+        li.append(div)
+        ul.append(li)
+    }
+    body.append(ul)
+    //getUsers()
+  }
+
+    const init = () => {
+        getUserNow();
+      if (ws) {
+        ws.onerror = ws.onopen = ws.onclose = null;
+        ws.close();
+      }
+
+      ws = new WebSocket('ws://localhost:3000');
+      ws.onopen = () => {
+        console.log('Connection opened!');
+      }
+     ws.onmessage = ({data}) => { 
+        let mess = JSON.parse(data);
+        if (mess.friends){
+            if (mess.friends.includes(JSON.stringify(user.id))){
+          for (const friend of mess.friends){
+              alert(JSON.stringify({
+                  name: friend,
+                  text: `${mess.name} want to be your friend`
+              }))
+          /*const ul = document.querySelector('.notifications')
+          const li = document.createElement('li')
+          const div = document.createElement('div')
+          div.innerHTML = `
+          <p>${mess.name} want to be your friend</p><a id="user" style=" display: none; ">${mess.id}</a>
+          <button class="accept" onclick=acceptFriendShip()>Accept</button><button class="notaccept" onclick=notacceptFriendShip()>Not Accept</button>
+          `
+          li.append(div)
+          ul.append(li)
+          getUsers()*/
+          }
+          showFriendAlert(user.id)
+        }
+        }else if (mess.event && mess.friend === user.id){
+          let messageEvent = (mess.event === 'accept') ? mess.name + " accept to be your friend!" : mess.name + " didn't accept to be your friend!"
+          alert(messageEvent)
+          getUsers()
+          getFriends()
+        }else if (mess.admin && mess.users.includes(user.id)){
+            alert(mess.admin + ' add you to the room: ' + mess.room)
+            getRooms(user.id)
+        }else if (mess.adminName && mess.users.includes(user.id)){
+            alert(mess.adminName + ' deleted room: ' + mess.room)
+            getRooms(user.id)
+        }else if (mess.whoLeaveRoom && JSON.stringify(mess.room.users).includes(JSON.stringify({id: user.id, nickname: user.nickname, photo: user.photo}))){
+            alert(mess.whoLeaveRoom + ' leave room: ' + mess.room.room)
+            getRooms(user.id)
+        }else if (mess.whoDropMe && mess.user === user.id){ 
+          alert(mess.whoDropMe + ' dropped you from room: ' + mess.room);
+          getRooms(user.id)
+        }else if (mess.whoAdd && mess.users.includes(user.id)){ 
+          alert(mess.whoAdd + ' addeded you to room: ' + mess.room);
+          getRooms(user.id)
+        }else if (mess.whoCancelFriends && mess.friend === user.id){ 
+          alert(mess.whoCancelFriends + ' dropped you from friends');
+          getFriends()
+          getUsers()
+        }else{
+            console.log('Spatny chat ',JSON.parse(data));
+        }
+       //console.log(mess)
+        
+    };
+      ws.onclose = function() {
+        ws = null;
+      }
+    }
+    init()
+    sendBtn.onclick = async function() {
+      const friends = document.querySelectorAll('#users')
+      if (!ws) {
+        console.log("No WebSocket connection :(");
+      }else{
+      let myFriends = []
+      for (let i = 0; i < friends.length; i++){
+            if (friends[i].checked === true){
+                myFriends.push(friends[i].value)
+                friends[i].style.display = 'none'
+                friends[i].checked = false
+                console.log('vlozeno')
+            }
+        }
+    const response = await fetch('./sendNotif', {
+        method: 'POST',
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: JSON.stringify({
+        id: user.id,
+        friends: myFriends,
+        name: user.nickname,
+        friendRequest: true
+        })
+    })
+    const answer = response.json()
+    console.log(answer)
+      ws.send(JSON.stringify({
+        id: user.id,
+        friends: myFriends,
+        name: user.nickname
+      }));
+    }
+    }
+    </script>
+</body>
+</html>
